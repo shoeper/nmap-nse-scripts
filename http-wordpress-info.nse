@@ -70,13 +70,15 @@ portrule = shortport.http
 
 action = function(host, port)
   local response, loc, generator
-  local path = stdnse.get_script_args('http-wordpress-info.path') or '/'
+  local path = stdnse.get_script_args('http-wordpress-info.path') or '/feed/'
   local redirects = tonumber(stdnse.get_script_args('http-wordpress-info.redirects')) or 3
   local output_tab = stdnse.output_table()
 
-  -- Find Version in "meta generator tag"
-  local pattern = '<meta name="?generator"? content="WordPress ([.0-9]*)" ?/?>'
-  local themematch = 'wp%-content/themes/([0-9a-z]+)'
+  output_tab.path = path
+
+  -- Find Version in "generator tag"
+  local pattern = '<generator>.*wordpress.*v=([.0-9]*)</generator>'
+  --local themematch = 'wp%-content/themes/([0-9a-z]+)'
  
   -- make pattern case-insensitive
   pattern = pattern:gsub("%a", function (c)
@@ -85,39 +87,40 @@ action = function(host, port)
       end)
 
   -- Find version in readme.html file
-  local readmepattern = 'Version ([.0-9]*)'
+  --local readmepattern = 'Version ([.0-9]*)'
   local wpversion = nil
-  local themes = nil
+  --local themes = nil
   
 
 
   response = follow_redirects(host, port, path, redirects)
+  ----output_tab.response = response
   if ( response and response.body ) then
     wpversion = response.body:match(pattern)
-    themes = response.body:match(themematch)
-    plugins = parse_plugins_response(response.body)
+    --themes = response.body:match(themematch)
+    --plugins = parse_plugins_response(response.body)
   end
 
   -- If version not in generator tag, check /readme.html
-  if ( not wpversion and response.body:match("wp%-content")) then
-    readmepath = path .. '/readme.html'
-    readmeresponse = follow_redirects(host, port, readmepath, redirects)
-    if ( readmeresponse and readmeresponse.body ) then
-      wpversion = readmeresponse.body:match(readmepattern)
-    end
-  end
+  --if ( not wpversion and response.body:match("wp%-content")) then
+  --  readmepath = path .. '/readme.html'
+  --  readmeresponse = follow_redirects(host, port, readmepath, redirects)
+  --  if ( readmeresponse and readmeresponse.body ) then
+  --    wpversion = readmeresponse.body:match(readmepattern)
+  --  end
+  --end
 
   -- Store results in output table
   if wpversion then
     output_tab.version = 'WordPress ' .. wpversion
   end
-  if ( themes and #themes > 0 ) then
-    output_tab.theme = themes
-  end
-  if ( plugins and #plugins > 0 ) then
-    output_tab.plugins = plugins 
-  end
-  if ( output_tab.version or output_tab.plugins or output_tab.theme ) then
+  --if ( themes and #themes > 0 ) then
+  --  output_tab.theme = themes
+  --end
+  --if ( plugins and #plugins > 0 ) then
+  --  output_tab.plugins = plugins 
+  --end
+  --if ( output_tab.version or output_tab.plugins or output_tab.theme ) then
      return output_tab
-  end
+  --end
 end
